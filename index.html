@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>Gemini 對話整理器</title>
+  <style>
+    body { font-family: 'Noto Sans TC', 'Segoe UI', sans-serif; background: #f5f5fb; padding: 32px; }
+    .container { max-width: 540px; margin: auto; background: #fff; border-radius: 14px; box-shadow: 0 8px 32px #dfdffc55; padding: 36px 30px 20px 30px;}
+    h2 { color: #6c60e0; margin-bottom: 18px; }
+    .upload { margin-bottom: 24px; }
+    #output { white-space: pre-wrap; border: 1px solid #c0c2d9; border-radius: 6px; min-height: 100px; padding: 14px; background: #f7f7fd; margin-bottom: 14px;}
+    .btn { margin: 0 8px 16px 0; padding: 8px 20px; border: none; background: #7966f2; color: #fff; border-radius: 6px; font-size: 1.05em; cursor: pointer; transition: background .2s;}
+    .btn:hover { background: #5949c7;}
+    .info { color: #888aa9; font-size: 0.95em; margin-bottom: 10px;}
+    .footer { margin-top: 18px; text-align: center; color: #aaa; font-size: 0.95em;}
+    @media (max-width: 600px) {
+      .container { padding: 18px 4vw 8px 4vw;}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Gemini 對話整理器</h2>
+    <div class="info">
+      上傳你的「Gemini 活動 HTML」檔案，<b>一鍵整理</b>成：<br>
+      <span style="color:#6c60e0;">［時間］<br>我: <br>Gemini:</span> <br>
+      <span style="font-size:0.92em;color:#a09cd6;">(支援大多數 Gemini 歷史記錄原始檔，內容完全不會上傳伺服器，僅在本地處理。)</span>
+    </div>
+    <input type="file" id="fileInput" accept=".html" class="upload">
+    <button class="btn" onclick="copyOutput()">複製結果</button>
+    <button class="btn" onclick="downloadTxt()">下載TXT</button>
+    <div id="output">結果會顯示在這裡…</div>
+    <div class="footer">
+      由minijin的夜夜特製 💜｜本地運行，安全無憂<br>
+      有任何想加的功能/優化/格式需求，盡管告訴我！
+    </div>
+  </div>
+  <script>
+    let formattedText = '';
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        const html = evt.target.result;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        // 嘗試根據 Gemini 匯出活動檔的常見結構進行解析
+        const bodyText = doc.body.innerText;
+        const blocks = bodyText.split('產品：');
+        let entries = [];
+        blocks.forEach(block => {
+          if (!block.includes('Gemini Apps')) return;
+          let timeMatch = block.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(上午|下午|凌晨)?(\d{1,2}):(\d{2}):(\d{2})\s*CST/);
+          if (!timeMatch) return;
+          let [full, year, month, day, ampm, hour, minute, second] = timeMatch;
+          // 12小時制處理
+          if(ampm === '下午' && hour < 12) hour = (+hour)+12;
+          if(ampm === '凌晨' && hour == 12) hour = 0;
+          let time = `${year}/${month.padStart(2,'0')}/${day.padStart(2,'0')} ${hour.toString().padStart(2,'0')}:${minute}:${second}`;
+          let promptMatch = block.match(/Prompted\s*([\s\S]*?)(?=\d{4}年\d{1,2}月\d{1,2}日|$)/);
+          let prompt = promptMatch ? promptMatch[1].trim() : '[找不到提問]';
+          let response = block.substring(block.indexOf(full) + full.length).trim();
+          entries.push({ time, prompt, response });
+        });
+        if (entries.length === 0) {
+          document.getElementById('output').textContent = '❌ 無法解析內容，請確認你上傳的是 Gemini 活動紀錄 HTML 原檔。';
+          formattedText = '';
+          return;
+        }
+        formattedText = entries.map(ent =>
+          `［${ent.time}］\n我:${ent.prompt}\nGemini:${ent.response}\n`
+        ).join('\n');
+        document.getElementById('output').textContent = formattedText;
+      };
+      reader.readAsText(file, 'utf-8');
+    });
+
+    function copyOutput() {
+      const text = document.getElementById('output').textContent;
+      if (!text || text.startsWith('❌')) return;
+      navigator.clipboard.writeText(text).then(() => alert('已複製到剪貼簿！'));
+    }
+    function downloadTxt() {
+      if (!formattedText) return;
+      const blob = new Blob([formattedText], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "Gemini_對話整理.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  </script>
+</body>
+</html>
