@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini 對話整理器 (專業版 v3.2)</title>
+  <title>Gemini 對話整理器 (專業版 v3.3)</title>
   <style>
     /* 基礎樣式 */
     body { 
@@ -32,11 +32,16 @@
       border: 2px dashed #c0c2d9;
       border-radius: 10px;
       padding: 20px;
-      text-align: center;
       margin-bottom: 24px;
       background-color: #f7f7fd;
       cursor: pointer;
       transition: background-color 0.3s, border-color 0.3s;
+      /* v3.3 修正: 使用 Flexbox 確保內容置中 */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      min-height: 100px; 
     }
     .upload-area:hover {
       background-color: #e8e6ff;
@@ -203,7 +208,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Gemini 對話整理器 (專業版 v3.2)</h2>
+    <h2>Gemini 對話整理器 (專業版 v3.3)</h2>
     
     <label for="fileInput" class="upload-area">
       <span id="uploadLabel">點擊此處或拖曳檔案上傳</span>
