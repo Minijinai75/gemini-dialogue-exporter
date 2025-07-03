@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini 對話整理器 (專業版 v3.3)</title>
+  <title>Gemini 對話整理器 (專業版 v3.7)</title>
   <style>
     /* 基礎樣式 */
     body { 
@@ -36,7 +36,6 @@
       background-color: #f7f7fd;
       cursor: pointer;
       transition: background-color 0.3s, border-color 0.3s;
-      /* v3.3 修正: 使用 Flexbox 確保內容置中 */
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -60,6 +59,65 @@
       font-size: 0.9em;
       color: #666;
     }
+
+    /* 新增的使用說明區塊 */
+    .info-details {
+        border: 1px solid #e8e6ff;
+        border-radius: 8px;
+        margin-bottom: 24px;
+        background-color: #fdfdff;
+    }
+    .info-details summary {
+        padding: 12px 16px;
+        font-weight: 500;
+        color: #5949c7;
+        cursor: pointer;
+        outline: none;
+        list-style: none; /* 移除預設箭頭 */
+        position: relative;
+    }
+    .info-details summary::-webkit-details-marker {
+        display: none; /* For Chrome */
+    }
+    .info-details summary::after {
+        content: '▼';
+        position: absolute;
+        right: 16px;
+        font-size: 0.8em;
+        transition: transform 0.2s;
+    }
+    .info-details[open] > summary::after {
+        transform: rotate(180deg);
+    }
+    .details-content {
+        padding: 0 16px 16px 16px;
+        border-top: 1px solid #e8e6ff;
+    }
+    .details-content ol {
+        padding-left: 20px;
+        line-height: 1.8; /* 增加行高讓閱讀更舒適 */
+        color: #555;
+        margin: 10px 0 0 0;
+    }
+    .details-content li {
+        margin-bottom: 8px; /* 增加列表項間距 */
+    }
+    .details-content a {
+        color: #7966f2;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .details-content a:hover {
+        text-decoration: underline;
+    }
+    .details-content p {
+        text-align: center;
+        margin: 16px 0 0 0;
+    }
+    .details-content strong {
+        color: #6c60e0;
+    }
+
 
     /* 篩選與設定區 */
     .controls-container {
@@ -208,13 +266,32 @@
 </head>
 <body>
   <div class="container">
-    <h2>Gemini 對話整理器 (專業版 v3.3)</h2>
+    <h2>Gemini 對話整理器 (專業版 v3.7)</h2>
     
     <label for="fileInput" class="upload-area">
       <span id="uploadLabel">點擊此處或拖曳檔案上傳</span>
       <span id="fileName">尚未選擇檔案</span>
     </label>
     <input type="file" id="fileInput" accept=".html">
+
+    <details class="info-details">
+        <summary>如何取得 Gemini 對話紀錄 HTML 檔案？</summary>
+        <div class="details-content">
+            <ol>
+                <li>步驟一：點選「取消全選」。</li>
+                <li>步驟二：往下拉找到【我的活動】打勾 + 點開【包含所有資料活動】。</li>
+                <li>步驟三：進入【包含所有資料活動】後，只勾選【Gemini Apps】。</li>
+                <li>步驟四：選擇格式，點擊【多種格式】然後按【確定】。</li>
+                <li>步驟五：按【下一步】。</li>
+                <li>步驟六：依照喜好設定，按【建立匯出作業】。</li>
+                <li>步驟七：在「傳送方式」選擇「透過電子郵件傳送下載連結」。</li>
+                <li>步驟八：收到 Google 的郵件後，下載您的 .zip 壓縮檔。</li>
+                <li>步驟九：解壓縮檔案，並在 <strong>Takeout/Gemini Apps Activity/</strong> 資料夾中找到 <strong>我的活動.html</strong> 或 <strong>MyActivity.html</strong>。</li>
+                <li>步驟十：將該 HTML 檔案上傳至本工具即可開始使用！</li>
+            </ol>
+            <p><a href="https://docs.google.com/document/d/e/2PACX-1vTrth3PPy6qAv6mxeB8eb_BdUbSFMzVp1nrlaVIxA6mmGOGT_8kwdbg_f3F8hAtbW99EWkmJItZVEtr/pub" target="_blank"><b>👀圖解說明請點這裡</b></a></p>
+        </div>
+    </details>
 
     <div class="controls-container">
         <div class="control-group">
