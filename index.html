@@ -2,94 +2,560 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>Gemini 對話整理器</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gemini 對話整理器 (專業版 v3.2)</title>
   <style>
-    body { font-family: 'Noto Sans TC', 'Segoe UI', sans-serif; background: #f5f5fb; padding: 32px; }
-    .container { max-width: 540px; margin: auto; background: #fff; border-radius: 14px; box-shadow: 0 8px 32px #dfdffc55; padding: 36px 30px 20px 30px;}
-    h2 { color: #6c60e0; margin-bottom: 18px; }
-    .upload { margin-bottom: 24px; }
-    #output { white-space: pre-wrap; border: 1px solid #c0c2d9; border-radius: 6px; min-height: 100px; padding: 14px; background: #f7f7fd; margin-bottom: 14px;}
-    .btn { margin: 0 8px 16px 0; padding: 8px 20px; border: none; background: #7966f2; color: #fff; border-radius: 6px; font-size: 1.05em; cursor: pointer; transition: background .2s;}
-    .btn:hover { background: #5949c7;}
-    .info { color: #888aa9; font-size: 0.95em; margin-bottom: 10px;}
-    .footer { margin-top: 18px; text-align: center; color: #aaa; font-size: 0.95em;}
+    /* 基礎樣式 */
+    body { 
+      font-family: 'Noto Sans TC', 'Segoe UI', sans-serif; 
+      background: #f5f5fb; 
+      padding: 20px; 
+      margin: 0;
+    }
+    .container { 
+      max-width: 700px; 
+      margin: auto; 
+      background: #fff; 
+      border-radius: 14px; 
+      box-shadow: 0 8px 32px #dfdffc55; 
+      padding: 24px 30px;
+    }
+    h2 { 
+      color: #6c60e0; 
+      margin-top: 0;
+      margin-bottom: 18px; 
+      text-align: center;
+    }
+
+    /* 上傳區 */
+    .upload-area {
+      border: 2px dashed #c0c2d9;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 24px;
+      background-color: #f7f7fd;
+      cursor: pointer;
+      transition: background-color 0.3s, border-color 0.3s;
+    }
+    .upload-area:hover {
+      background-color: #e8e6ff;
+      border-color: #7966f2;
+    }
+    #fileInput {
+      display: none;
+    }
+    #uploadLabel {
+      font-weight: 500;
+      color: #5949c7;
+    }
+    #fileName {
+      display: block;
+      margin-top: 8px;
+      font-size: 0.9em;
+      color: #666;
+    }
+
+    /* 篩選與設定區 */
+    .controls-container {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 20px;
+    }
+    .controls-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    .control-group label {
+        display: block;
+        font-weight: 500;
+        color: #555;
+        margin-bottom: 6px;
+    }
+    .control-group select, .control-group input[type="text"], .control-group input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #c0c2d9;
+        border-radius: 6px;
+        background-color: #fdfdff;
+        box-sizing: border-box;
+    }
+    #page-range-info {
+        font-size: 0.85em;
+        color: #7966f2;
+        text-align: center;
+        margin-top: 4px;
+        min-height: 1.2em;
+    }
+
+    /* 文字區塊 */
+    textarea { 
+      width: 100%; 
+      box-sizing: border-box; 
+      border: 1px solid #c0c2d9; 
+      border-radius: 6px; 
+      padding: 14px; 
+      background: #f7f7fd; 
+      margin-bottom: 14px; 
+      font-family: inherit; 
+      font-size: 1em; 
+      resize: vertical; 
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+    textarea:focus, .control-group input:focus, .control-group select:focus {
+      border-color: #7966f2;
+      box-shadow: 0 0 0 3px rgba(121, 102, 242, 0.2);
+      outline: none;
+    }
+    #output { 
+      min-height: 250px; 
+      white-space: pre-wrap; 
+    }
+    #formatTemplate { 
+      min-height: 120px; 
+      font-family: 'Courier New', Courier, monospace; 
+      color: #333;
+      background-color: #fdfdff;
+    }
+
+    /* 按鈕區 */
+    .button-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .btn { 
+      padding: 10px 20px; 
+      border: none; 
+      background: #7966f2; 
+      color: #fff; 
+      border-radius: 8px; 
+      font-size: 1em; 
+      font-weight: 500;
+      cursor: pointer; 
+      transition: background-color .2s, transform .1s;
+      flex-grow: 1;
+    }
+    .btn:hover { 
+      background: #5949c7;
+    }
+    .btn:active {
+        transform: scale(0.98);
+    }
+    .btn.clear { 
+      background: #e06060; 
+    }
+    .btn.clear:hover { 
+      background: #c74949; 
+    }
+
+    /* 說明與區塊 */
+    .info { 
+      color: #667; 
+      font-size: 0.95em; 
+      margin-bottom: 10px;
+      padding: 12px;
+      background-color: #f7f7fd;
+      border-radius: 8px;
+      line-height: 1.6;
+    }
+    .info code {
+      background-color: #e8e6ff;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #5949c7;
+      font-weight: bold;
+      font-size: 0.95em;
+    }
+    .footer { 
+      margin-top: 18px; 
+      text-align: center; 
+      color: #aaa; 
+      font-size: 0.9em;
+    }
+    .section-title { 
+      font-size: 1.2em; 
+      color: #555; 
+      margin-top: 20px;
+      margin-bottom: 8px; 
+      border-left: 4px solid #7966f2;
+      padding-left: 8px;
+    }
+    #status-bar {
+        text-align: right;
+        font-size: 0.9em;
+        color: #667;
+        margin-bottom: 10px;
+        min-height: 1.2em;
+    }
+    
+    /* 響應式設計 */
     @media (max-width: 600px) {
-      .container { padding: 18px 4vw 8px 4vw;}
+      body { padding: 10px; }
+      .container { padding: 18px 20px; }
+      .button-group { flex-direction: column; }
+      .controls-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h2>Gemini 對話整理器</h2>
-    <div class="info">
-      上傳你的「Gemini 活動 HTML」檔案，<b>一鍵整理</b>成：<br>
-      <span style="color:#6c60e0;">［時間］<br>我: <br>Gemini:</span> <br>
-      <span style="font-size:0.92em;color:#a09cd6;">(支援大多數 Gemini 歷史記錄原始檔，內容完全不會上傳伺服器，只在你裝置裡處理運行，安全無憂。)</span>
+    <h2>Gemini 對話整理器 (專業版 v3.2)</h2>
+    
+    <label for="fileInput" class="upload-area">
+      <span id="uploadLabel">點擊此處或拖曳檔案上傳</span>
+      <span id="fileName">尚未選擇檔案</span>
+    </label>
+    <input type="file" id="fileInput" accept=".html">
+
+    <div class="controls-container">
+        <div class="control-group">
+            <label for="gemFilter">1. 篩選 Gem 角色:</label>
+            <select id="gemFilter" disabled>
+                <option value="all">請先上傳檔案</option>
+            </select>
+        </div>
+        <div class="control-group">
+            <label for="pageStart">2. 篩選頁碼範圍:</label>
+            <div class="controls-grid">
+                <input type="number" id="pageStart" placeholder="起始頁碼" disabled>
+                <input type="number" id="pageEnd" placeholder="結束頁碼" disabled>
+            </div>
+            <div id="page-range-info"></div>
+        </div>
+        <div class="control-group">
+            <label for="searchFilter">3. 關鍵字搜尋:</label>
+            <input type="text" id="searchFilter" placeholder="在提問與回覆中搜尋..." disabled>
+        </div>
     </div>
-    <input type="file" id="fileInput" accept=".html" class="upload">
-    <button class="btn" onclick="copyOutput()">複製結果</button>
-    <button class="btn" onclick="downloadTxt()">下載TXT</button>
-    <div id="output">結果會顯示在這裡…</div>
+    
+    <h3 class="section-title">自訂輸出格式</h3>
+    <div class="info">
+      <b>參數定義說明：</b><br>
+      <code>[TIME]</code>: 實際聊天時間<br>
+      <code>[PROMPT]</code>: 我的回覆<br>
+      <code>[RESPONSE]</code>: 角色回覆<br>
+      <code>[GEM_NAME]</code>: 角色名稱
+    </div>
+    <textarea id="formatTemplate">［[TIME]］
+我: [PROMPT]
+Gemini ([GEM_NAME]):
+[RESPONSE]
+---
+</textarea>
+    </div>
+
+    <div class="button-group">
+        <button class="btn" onclick="copyOutput()">複製結果</button>
+        <button class="btn" onclick="downloadTxt()">下載 TXT</button>
+        <button class="btn clear" onclick="clearAll()">清除重置</button>
+    </div>
+
+    <div id="status-bar"></div>
+    <textarea id="output" readonly placeholder="解析結果會顯示在這裡…"></textarea>
+
     <div class="footer">
-      由minijin的GPT夜夜特製 💜｜只在你裝置裡處理運行，安全無憂<br>
-      有任何想加的功能/優化/格式需求，盡管告訴我！
+      由@minijinai75和她的小精靈們一起優化與建構 💜｜檔案全程在您的裝置離線處理，安全無虞。
     </div>
   </div>
+
   <script>
-    let formattedText = '';
-    document.getElementById('fileInput').addEventListener('change', function(e) {
+    let allEntries = []; // 儲存所有解析出的對話記錄
+
+    // DOM 元素獲取
+    const fileInput = document.getElementById('fileInput');
+    const fileNameSpan = document.getElementById('fileName');
+    const outputEl = document.getElementById('output');
+    const gemFilter = document.getElementById('gemFilter');
+    const searchFilter = document.getElementById('searchFilter');
+    const pageStartInput = document.getElementById('pageStart');
+    const pageEndInput = document.getElementById('pageEnd');
+    const pageRangeInfo = document.getElementById('page-range-info');
+    const formatTemplateTextarea = document.getElementById('formatTemplate');
+    const uploadArea = document.querySelector('.upload-area');
+    const statusBar = document.getElementById('status-bar');
+
+    // --- 事件監聽 ---
+    fileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = function(evt) {
-        const html = evt.target.result;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        // 嘗試根據 Gemini 匯出活動檔的常見結構進行解析
-        const bodyText = doc.body.innerText;
-        const blocks = bodyText.split('產品：');
-        let entries = [];
-        blocks.forEach(block => {
-          if (!block.includes('Gemini Apps')) return;
-          let timeMatch = block.match(/(\d{4})年(\d{1,2})月(\d{1,2})日\s*(上午|下午|凌晨)?(\d{1,2}):(\d{2}):(\d{2})\s*CST/);
-          if (!timeMatch) return;
-          let [full, year, month, day, ampm, hour, minute, second] = timeMatch;
-          // 12小時制處理
-          if(ampm === '下午' && hour < 12) hour = (+hour)+12;
-          if(ampm === '凌晨' && hour == 12) hour = 0;
-          let time = `${year}/${month.padStart(2,'0')}/${day.padStart(2,'0')} ${hour.toString().padStart(2,'0')}:${minute}:${second}`;
-          let promptMatch = block.match(/Prompted\s*([\s\S]*?)(?=\d{4}年\d{1,2}月\d{1,2}日|$)/);
-          let prompt = promptMatch ? promptMatch[1].trim() : '[找不到提問]';
-          let response = block.substring(block.indexOf(full) + full.length).trim();
-          entries.push({ time, prompt, response });
-        });
-        if (entries.length === 0) {
-          document.getElementById('output').textContent = '❌ 無法解析內容，請確認你上傳的是 Gemini 活動紀錄 HTML 原檔。';
-          formattedText = '';
-          return;
-        }
-        formattedText = entries.map(ent =>
-          `［${ent.time}］\n我:${ent.prompt}\nGemini:${ent.response}\n`
-        ).join('\n');
-        document.getElementById('output').textContent = formattedText;
-      };
-      reader.readAsText(file, 'utf-8');
+      if (file) {
+        fileNameSpan.textContent = `已選擇: ${file.name}`;
+        handleFile(file);
+      }
     });
 
-    function copyOutput() {
-      const text = document.getElementById('output').textContent;
-      if (!text || text.startsWith('❌')) return;
-      navigator.clipboard.writeText(text).then(() => alert('已複製到剪貼簿！'));
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.style.backgroundColor = '#e8e6ff'; uploadArea.style.borderColor = '#7966f2'; });
+    uploadArea.addEventListener('dragleave', (e) => { e.preventDefault(); uploadArea.style.backgroundColor = '#f7f7fd'; uploadArea.style.borderColor = '#c0c2d9'; });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.style.backgroundColor = '#f7f7fd';
+        uploadArea.style.borderColor = '#c0c2d9';
+        const file = e.dataTransfer.files[0];
+        if (file && file.type === 'text/html') {
+            fileInput.files = e.dataTransfer.files;
+            fileNameSpan.textContent = `已選擇: ${file.name}`;
+            handleFile(file);
+        } else {
+            alert('請拖曳有效的 HTML 檔案！');
+        }
+    });
+
+    gemFilter.addEventListener('change', renderOutput);
+    searchFilter.addEventListener('input', renderOutput);
+    pageStartInput.addEventListener('input', renderOutput);
+    pageEndInput.addEventListener('input', renderOutput);
+    formatTemplateTextarea.addEventListener('input', renderOutput);
+
+
+    // --- 核心功能函式 ---
+
+    function handleFile(file) {
+      outputEl.value = '檔案讀取中，正在為您解析…';
+      outputEl.readOnly = true;
+      statusBar.textContent = '';
+      
+      const reader = new FileReader();
+      reader.onload = function(evt) {
+        try {
+          const html = evt.target.result;
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, "text/html");
+
+          const conversationBlocks = doc.querySelectorAll('.outer-cell.mdl-cell--12-col');
+          if (conversationBlocks.length === 0) {
+            throw new Error('在檔案中找不到任何對話區塊 (.outer-cell)。請確認檔案來源是否正確。');
+          }
+          
+          const parsedEntries = [];
+          conversationBlocks.forEach(block => {
+            const contentCell = block.querySelector('.content-cell.mdl-cell--6-col');
+            if (!contentCell) return;
+            
+            let time = '', gemName = 'N/A', prompt = '[找不到提問]', response = '', pageNumber = null;
+
+            const childNodes = Array.from(contentCell.childNodes);
+            let timeNodeFound = false;
+
+            for (const node of childNodes) {
+                if (node.nodeType === 3) { // 文字節點
+                    const text = node.textContent.trim();
+                    if (text.startsWith('Prompted')) {
+                        prompt = text.replace(/^Prompted\s*/, '').trim();
+                    } else if (text.includes('was used in this chat')) {
+                        const gemMatch = text.match(/^(.*?) was used in this chat/);
+                        if (gemMatch) gemName = gemMatch[1].trim();
+                    } else if (/\d{4}年.*?CST/.test(text)) {
+                        const timeMatch = text.match(/(\d{4}年.*?CST)/);
+                        if (timeMatch) {
+                            time = timeMatch[0];
+                            timeNodeFound = true;
+                        }
+                    }
+                } else if (node.nodeType === 1 && node.tagName === 'P' && timeNodeFound) { // 元素節點
+                    const pageMatch = node.innerText.match(/page\.(\d+)/);
+                    if (pageMatch) {
+                        pageNumber = parseInt(pageMatch[1], 10);
+                    }
+                    const pText = node.innerText; // 保留原始文字，包含頁碼
+                    if (pText) response += pText + '\n\n';
+                }
+            }
+            
+            if (!time) return;
+
+            parsedEntries.push({ time, gemName, prompt, response: response.trim(), pageNumber });
+          });
+
+          if (parsedEntries.length === 0) {
+            throw new Error('成功解析檔案，但未找到任何有效的 Gemini 對話內容。');
+          }
+          
+          allEntries = parsedEntries.reverse();
+          
+          populateGemFilter(allEntries);
+          searchFilter.disabled = false;
+          pageStartInput.disabled = false;
+          pageEndInput.disabled = false;
+          renderOutput();
+
+        } catch (error) {
+          outputEl.value = `❌ 解析失敗：${error.message}\n請確認您上傳的是從 Google Takeout 匯出的 Gemini 活動紀錄 HTML 原檔。`;
+          allEntries = [];
+        } finally {
+            outputEl.readOnly = false;
+        }
+      };
+      reader.onerror = function() {
+          outputEl.value = '❌ 讀取檔案時發生錯誤！';
+          allEntries = [];
+          outputEl.readOnly = false;
+      };
+      reader.readAsText(file, 'utf-8');
     }
+
+    function populateGemFilter(entries) {
+        const uniqueGems = [...new Set(entries.map(e => e.gemName))];
+        gemFilter.innerHTML = '';
+        
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = `顯示全部 (${entries.length}則)`;
+        gemFilter.appendChild(allOption);
+
+        uniqueGems.forEach(gem => {
+            if (gem === 'N/A') return;
+            const count = entries.filter(e => e.gemName === gem).length;
+            const option = document.createElement('option');
+            option.value = gem;
+            option.textContent = `${gem} (${count}則)`;
+            gemFilter.appendChild(option);
+        });
+        gemFilter.disabled = false;
+    }
+
+    function renderOutput() {
+        if (allEntries.length === 0) return;
+
+        const selectedGem = gemFilter.value;
+        const searchTerm = searchFilter.value.toLowerCase();
+        const template = formatTemplateTextarea.value;
+        const startPage = parseInt(pageStartInput.value) || 0;
+        const endPage = parseInt(pageEndInput.value) || Infinity;
+
+        let filteredEntries = allEntries;
+
+        // 1. 根據 Gem 名稱篩選
+        if (selectedGem !== 'all') {
+            filteredEntries = filteredEntries.filter(entry => entry.gemName === selectedGem);
+        }
+        
+        // 更新頁碼提示
+        const pageNumbers = filteredEntries.map(e => e.pageNumber).filter(n => n !== null);
+        if (pageNumbers.length > 0) {
+            const minPage = Math.min(...pageNumbers);
+            const maxPage = Math.max(...pageNumbers);
+            pageRangeInfo.textContent = `可用頁碼範圍: ${minPage} - ${maxPage}`;
+        } else {
+            pageRangeInfo.textContent = '此篩選結果無頁碼資訊';
+        }
+
+        // 2. 根據頁碼範圍篩選
+        filteredEntries = filteredEntries.filter(entry => {
+            if (entry.pageNumber === null) return true;
+            return entry.pageNumber >= startPage && entry.pageNumber <= endPage;
+        });
+
+        // 3. 根據關鍵字篩選
+        if (searchTerm) {
+            filteredEntries = filteredEntries.filter(entry => 
+                entry.prompt.toLowerCase().includes(searchTerm) || 
+                entry.response.toLowerCase().includes(searchTerm)
+            );
+        }
+
+        const formattedText = filteredEntries.map(ent => {
+            return template
+              .replace(/\[TIME\]/g, ent.time)
+              .replace(/\[PROMPT\]/g, ent.prompt)
+              .replace(/\[RESPONSE\]/g, ent.response)
+              .replace(/\[GEM_NAME\]/g, ent.gemName);
+        }).join('');
+
+        outputEl.value = formattedText;
+        statusBar.textContent = `正在顯示 ${filteredEntries.length} / ${allEntries.length} 則對話`;
+    }
+
+    // --- 工具按鈕函式 ---
+
+    function copyOutput() {
+      const text = outputEl.value;
+      if (!text || text.startsWith('❌') || text.startsWith('解析結果')) return;
+      
+      try {
+        navigator.clipboard.writeText(text).then(() => {
+            alert('已複製到剪貼簿！');
+        }, () => {
+            fallbackCopyTextToClipboard(text);
+        });
+      } catch (err) {
+        fallbackCopyTextToClipboard(text);
+      }
+    }
+
+    function fallbackCopyTextToClipboard(text) {
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        textArea.style.top = "0";
+        textArea.style.left = "0";
+        textArea.style.position = "fixed";
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        try {
+            const successful = document.execCommand('copy');
+            if (successful) alert('已複製到剪貼簿！');
+            else alert('複製失敗，您的瀏覽器可能不支援此功能。');
+        } catch (err) {
+            alert('複製時發生錯誤！');
+        }
+        document.body.removeChild(textArea);
+    }
+
     function downloadTxt() {
-      if (!formattedText) return;
-      const blob = new Blob([formattedText], { type: 'text/plain' });
+      const textToSave = outputEl.value;
+      if (!textToSave || textToSave.startsWith('❌') || textToSave.startsWith('解析結果')) return;
+
+      const blob = new Blob([textToSave], { type: 'text/plain;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = "Gemini_對話整理.txt";
+      
+      const selectedGem = gemFilter.value === 'all' ? '全部' : gemFilter.value;
+      const searchTerm = searchFilter.value;
+      const startPage = pageStartInput.value;
+      const endPage = pageEndInput.value;
+
+      let pagePart = '_整理';
+      if (startPage && endPage) {
+          pagePart = `_整理PAGE${startPage}-${endPage}`;
+      } else if (startPage) {
+          pagePart = `_整理PAGE${startPage}-`;
+      } else if (endPage) {
+          pagePart = `_整理PAGE-${endPage}`;
+      }
+      
+      const searchPart = searchTerm ? `_關於${searchTerm}` : '';
+      a.download = `Gemini_${selectedGem}${pagePart}${searchPart}.txt`;
+
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
+    }
+
+    function clearAll() {
+      fileInput.value = '';
+      outputEl.value = '';
+      outputEl.placeholder = '解析結果會顯示在這裡…';
+      fileNameSpan.textContent = '尚未選擇檔案';
+      statusBar.textContent = '';
+      
+      gemFilter.innerHTML = '<option value="all">請先上傳檔案</option>';
+      gemFilter.disabled = true;
+      
+      searchFilter.value = '';
+      searchFilter.disabled = true;
+
+      pageStartInput.value = '';
+      pageStartInput.disabled = true;
+      pageEndInput.value = '';
+      pageEndInput.disabled = true;
+      pageRangeInfo.textContent = '';
+
+      allEntries = [];
     }
   </script>
 </body>
