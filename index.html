@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini 對話整理器 v3.7 </title>
+  <title>Gemini 對話整理器 v3.9</title>
   <style>
     /* 基礎樣式 */
     body { 
@@ -110,9 +110,13 @@
     .details-content a:hover {
         text-decoration: underline;
     }
-    .details-content p {
+    .tutorial-link {
         text-align: center;
-        margin: 16px 0 0 0;
+        margin: 16px 0;
+    }
+    .tutorial-link a {
+        font-size: 1.1em; /* 放大字體 */
+        font-weight: bold;
     }
     .details-content strong {
         color: #6c60e0;
@@ -266,7 +270,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Gemini 對話整理器 v3.7</h2>
+    <h2>Gemini 對話整理器 v3.9</h2>
     
     <label for="fileInput" class="upload-area">
       <span id="uploadLabel">點擊此處或拖曳檔案上傳</span>
@@ -277,6 +281,7 @@
     <details class="info-details">
         <summary>如何取得 Gemini 對話紀錄 HTML 檔案？</summary>
         <div class="details-content">
+            <p class="tutorial-link"><a href="https://docs.google.com/document/d/e/2PACX-1vTrth3PPy6qAv6mxeB8eb_BdUbSFMzVp1nrlaVIxA6mmGOGT_8kwdbg_f3F8hAtbW99EWkmJItZVEtr/pub" target="_blank">👀圖解說明請點這裡</a></p>
             <ol>
                 <li>步驟一：點選「取消全選」。</li>
                 <li>步驟二：往下拉找到【我的活動】打勾 + 點開【包含所有資料活動】。</li>
@@ -289,7 +294,6 @@
                 <li>步驟九：解壓縮檔案，並在 <strong>Takeout/Gemini Apps Activity/</strong> 資料夾中找到 <strong>我的活動.html</strong> 或 <strong>MyActivity.html</strong>。</li>
                 <li>步驟十：將該 HTML 檔案上傳至本工具即可開始使用！</li>
             </ol>
-            <p><a href="https://docs.google.com/document/d/e/2PACX-1vTrth3PPy6qAv6mxeB8eb_BdUbSFMzVp1nrlaVIxA6mmGOGT_8kwdbg_f3F8hAtbW99EWkmJItZVEtr/pub" target="_blank"><b>👀圖解說明請點這裡</b></a></p>
         </div>
     </details>
 
