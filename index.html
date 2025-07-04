@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gemini 對話整理器 v4.1</title>
+  <title>Gemini 對話整理器 v4.3</title>
   <style>
     /* 基礎樣式 */
     body { 
@@ -141,7 +141,7 @@
         color: #555;
         margin-bottom: 6px;
     }
-    .control-group select, .control-group input[type="text"], .control-group input[type="number"] {
+    .control-group select, .control-group input[type="text"], .control-group input[type="number"], .control-group input[type="date"] {
         width: 100%;
         padding: 8px;
         border: 1px solid #c0c2d9;
@@ -270,7 +270,7 @@
 </head>
 <body>
   <div class="container">
-    <h2>Gemini 對話整理器 v4.1</h2>
+    <h2>Gemini 對話整理器 v4.3</h2>
     
     <label for="fileInput" class="upload-area">
       <span id="uploadLabel">點擊此處或拖曳檔案上傳</span>
@@ -306,7 +306,14 @@
             </select>
         </div>
         <div class="control-group">
-            <label for="pageStart">2. 篩選頁碼範圍(如果對話中沒有包含Page則無法使用)</label>
+            <label for="dateStart">2. 篩選實際日期範圍:</label>
+            <div class="controls-grid">
+                <input type="date" id="dateStart" disabled>
+                <input type="date" id="dateEnd" disabled>
+            </div>
+        </div>
+        <div class="control-group">
+            <label for="pageStart">3. 篩選頁碼範圍(如果對話中沒有包含Page則無法使用)</label>
             <div class="controls-grid">
                 <input type="number" id="pageStart" placeholder="起始頁碼" disabled>
                 <input type="number" id="pageEnd" placeholder="結束頁碼" disabled>
@@ -314,7 +321,7 @@
             <div id="page-range-info"></div>
         </div>
         <div class="control-group">
-            <label for="searchFilter">3. 關鍵字搜尋:</label>
+            <label for="searchFilter">4. 關鍵字搜尋:</label>
             <input type="text" id="searchFilter" placeholder="在提問與回覆中搜尋..." disabled>
         </div>
     </div>
@@ -357,6 +364,8 @@ Gemini ([GEM_NAME]):
     const fileNameSpan = document.getElementById('fileName');
     const outputEl = document.getElementById('output');
     const gemFilter = document.getElementById('gemFilter');
+    const dateStartInput = document.getElementById('dateStart');
+    const dateEndInput = document.getElementById('dateEnd');
     const searchFilter = document.getElementById('searchFilter');
     const pageStartInput = document.getElementById('pageStart');
     const pageEndInput = document.getElementById('pageEnd');
@@ -391,6 +400,8 @@ Gemini ([GEM_NAME]):
     });
 
     gemFilter.addEventListener('change', renderOutput);
+    dateStartInput.addEventListener('change', renderOutput);
+    dateEndInput.addEventListener('change', renderOutput);
     searchFilter.addEventListener('input', renderOutput);
     pageStartInput.addEventListener('input', renderOutput);
     pageEndInput.addEventListener('input', renderOutput);
@@ -421,7 +432,7 @@ Gemini ([GEM_NAME]):
             const contentCell = block.querySelector('.content-cell.mdl-cell--6-col');
             if (!contentCell) return;
             
-            let time = '', gemName = 'N/A', prompt = '[找不到提問]', response = '', pageNumber = null;
+            let time = '', isoDate = null, gemName = 'N/A', prompt = '[找不到提問]', response = '', pageNumber = null;
 
             const childNodes = Array.from(contentCell.childNodes);
             let timeNodeFound = false;
@@ -438,6 +449,13 @@ Gemini ([GEM_NAME]):
                         const timeMatch = text.match(/(\d{4}年.*?CST)/);
                         if (timeMatch) {
                             time = timeMatch[0];
+                            const dateMatch = time.match(/(\d{4})年(\d{1,2})月(\d{1,2})日/);
+                            if(dateMatch) {
+                                const year = dateMatch[1];
+                                const month = dateMatch[2].padStart(2, '0');
+                                const day = dateMatch[3].padStart(2, '0');
+                                isoDate = `${year}-${month}-${day}`;
+                            }
                             timeNodeFound = true;
                         }
                     }
@@ -453,7 +471,7 @@ Gemini ([GEM_NAME]):
             
             if (!time) return;
 
-            parsedEntries.push({ time, gemName, prompt, response: response.trim(), pageNumber });
+            parsedEntries.push({ time, isoDate, gemName, prompt, response: response.trim(), pageNumber });
           });
 
           if (parsedEntries.length === 0) {
@@ -466,6 +484,8 @@ Gemini ([GEM_NAME]):
           searchFilter.disabled = false;
           pageStartInput.disabled = false;
           pageEndInput.disabled = false;
+          dateStartInput.disabled = false;
+          dateEndInput.disabled = false;
           renderOutput();
 
         } catch (error) {
@@ -507,6 +527,8 @@ Gemini ([GEM_NAME]):
         if (allEntries.length === 0) return;
 
         const selectedGem = gemFilter.value;
+        const startDate = dateStartInput.value;
+        const endDate = dateEndInput.value;
         const searchTerm = searchFilter.value.toLowerCase();
         const template = formatTemplateTextarea.value;
         const startPage = parseInt(pageStartInput.value) || 0;
@@ -519,6 +541,17 @@ Gemini ([GEM_NAME]):
             filteredEntries = filteredEntries.filter(entry => entry.gemName === selectedGem);
         }
         
+        // 2. 根據日期範圍篩選
+        if (startDate || endDate) {
+            filteredEntries = filteredEntries.filter(entry => {
+                if (!entry.isoDate) return false;
+                const entryDate = entry.isoDate;
+                const isAfterStart = startDate ? entryDate >= startDate : true;
+                const isBeforeEnd = endDate ? entryDate <= endDate : true;
+                return isAfterStart && isBeforeEnd;
+            });
+        }
+        
         // 更新頁碼提示
         const pageNumbers = filteredEntries.map(e => e.pageNumber).filter(n => n !== null);
         if (pageNumbers.length > 0) {
@@ -529,13 +562,13 @@ Gemini ([GEM_NAME]):
             pageRangeInfo.textContent = '此篩選結果無頁碼資訊';
         }
 
-        // 2. 根據頁碼範圍篩選
+        // 3. 根據頁碼範圍篩選
         filteredEntries = filteredEntries.filter(entry => {
             if (entry.pageNumber === null) return true;
             return entry.pageNumber >= startPage && entry.pageNumber <= endPage;
         });
 
-        // 3. 根據關鍵字篩選
+        // 4. 根據關鍵字篩選
         if (searchTerm) {
             filteredEntries = filteredEntries.filter(entry => 
                 entry.prompt.toLowerCase().includes(searchTerm) || 
@@ -604,6 +637,17 @@ Gemini ([GEM_NAME]):
       const searchTerm = searchFilter.value;
       const startPage = pageStartInput.value;
       const endPage = pageEndInput.value;
+      const startDate = dateStartInput.value;
+      const endDate = dateEndInput.value;
+
+      let datePart = '';
+      if(startDate && endDate) {
+          datePart = `_${startDate.replace(/-/g,'')}-${endDate.replace(/-/g,'')}`;
+      } else if (startDate) {
+          datePart = `_從${startDate.replace(/-/g,'')}`;
+      } else if (endDate) {
+          datePart = `_到${endDate.replace(/-/g,'')}`;
+      }
 
       let pagePart = '_整理';
       if (startPage && endPage) {
@@ -615,7 +659,7 @@ Gemini ([GEM_NAME]):
       }
       
       const searchPart = searchTerm ? `_關於${searchTerm}` : '';
-      a.download = `Gemini_${selectedGem}${pagePart}${searchPart}.txt`;
+      a.download = `Gemini_${selectedGem}${datePart}${pagePart}${searchPart}.txt`;
 
       document.body.appendChild(a);
       a.click();
@@ -632,6 +676,11 @@ Gemini ([GEM_NAME]):
       
       gemFilter.innerHTML = '<option value="all">請先上傳檔案</option>';
       gemFilter.disabled = true;
+
+      dateStartInput.value = '';
+      dateStartInput.disabled = true;
+      dateEndInput.value = '';
+      dateEndInput.disabled = true;
       
       searchFilter.value = '';
       searchFilter.disabled = true;
